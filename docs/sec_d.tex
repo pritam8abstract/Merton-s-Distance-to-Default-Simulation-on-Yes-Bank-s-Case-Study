@@ -1,0 +1,80 @@
+\section{Why I built it in this order}
+
+I want to be honest about something most reports hide: I did not write the Yes Bank pipeline first and trust it blindly. I built a small, fully-controlled toy problem first, where I already knew the right answer by hand, and I only pointed the machinery at a real bank once the toy problem came back clean. This section walks through that in the order I actually did it, with the real numbers my terminal printed, because I think the numbers mean more when you see them arrive the way I saw them arrive, rather than cleaned up and presented as if they always looked right.
+
+\section{Step one: proving the simulator before I trust it}
+\label{sec:build-mc}
+
+My very first worry was simple: what if I had made an algebra mistake somewhere in Section~\ref{sec:dd}, and my distance-to-default formula was quietly wrong? A wrong formula will still produce a number — it just won't be the \emph{right} number — so I needed an independent check that didn't go through the same algebra a second time. That's what Section~\ref{sec:mc}'s Monte Carlo simulation is for, and here is exactly what it printed the first time I ran it, for the illustrative firm with $V_0=120$, $D=100$, $\mu=8\%$, $\sigma=25\%$, $T=1$:
+
+\begin{verbatim}
+DD = 0.9243    closed-form PD = N(-DD) = 17.7669%
+
+    paths   MC PD (V_T<D)   +/- 95% CI  abs error
+      100        13.0000%      6.5915%     4.7669%
+    1,000        18.8000%      2.4217%     1.0331%
+   10,000        18.1000%      0.7546%     0.3331%
+  100,000        17.8270%      0.2372%     0.0601%
+1,000,000        17.7089%      0.0748%     0.0580%
+
+Barrier-any-time PD (100k paths, 252 steps): 37.7270%  (always >= terminal PD)
+\end{verbatim}
+
+\begin{defbox}{reading this output the way I had to read it the first time}
+The top line is the answer my formula \emph{claims}: a 17.77\% chance the firm's assets end below its debt in one year. Everything below it is me checking that claim by literally simulating the firm's future a million separate times and counting. At 100 random futures, my estimate (13.00\%) is nowhere near the formula's answer — but the ``$\pm$95\% CI'' column already warned me that with only 100 trials, I should expect to be off by as much as 6.59 percentage points just from randomness, so this isn't a failure, it's exactly what a small sample should look like. As I scaled up to a million simulated futures, my estimate (17.7089\%) landed within 0.058 percentage points of the formula's 17.7669\% — well inside the confidence band the statistics predicted. That convergence is what told me my algebra in Section~\ref{sec:dd} was actually correct, not just plausible-looking.
+
+The barrier line is a separate, harder question I asked out of curiosity: what if I count a default any time the simulated path dips below $D$ during the year, not just at the one-year mark? That number came back at 37.73\% — more than double the terminal-only answer. This makes sense once I thought about it: a path has many more chances to dip below a line at some point during a whole year than it has chances to specifically end below that line on the very last day. It's the difference between asking ``will the river ever flood this year'' versus ``will the river be flooded on exactly December 31st'' — the first question is easier to answer yes to. Merton's original model only asks the second, narrower question, and that is itself a limitation I come back to in Section~\ref{sec:limits}.
+\end{defbox}
+
+Once I had this convergence in hand, I trusted the formula enough to point it at a real company.
+
+\section{Step two: turning the formula into a daily pipeline}
+\label{sec:build-pipeline}
+
+The toy problem has one $V_0$, one $\sigma$, one answer. Yes Bank has 573 days of prices, a balance sheet that changes every quarter, and a question that only makes sense as a \emph{time series}: what did distance-to-default look like on every single trading day, not just once? This meant I had to build \texttt{yes\_bank\_dd.py} to do, automatically, for every day in my CSV, the same two-equation solve I describe by hand in Section~\ref{sec:estimate} — pull that day's equity value and the trailing 60-day equity volatility, feed them in alongside the most recently published balance sheet, and solve for that day's $V$, $\sigma_V$, $\DD$, and $d_2$.
+
+Here is a genuine excerpt of what that script printed, taken straight from my own terminal, one row per month-end for readability (the real file has one row per trading day):
+
+\begin{verbatim}
+Date         Price   sigma_E       V        sigma_V    DD      d2
+2018-04-30  362.00   0.356   308260.415   0.097   3.645   3.230
+2018-05-31  346.20   0.337   349962.452   0.077   3.847   3.328
+2018-06-30  339.65   0.294   348451.464   0.066   4.423   3.819
+2018-07-31  367.95   0.229   371937.976   0.052   5.697   4.932
+2018-08-31  343.50   0.284   366289.863   0.062   4.588   3.938
+2018-09-30  183.65   0.812   326683.137   0.121   1.342   1.012
+2018-10-31  188.10   0.905   362699.313   0.132   1.083   0.780
+2018-11-30  169.80   1.000   355724.074   0.145   0.843   0.567
+2018-12-31  181.80   0.679   365225.021   0.084   1.844   1.370
+2019-01-31  194.10   0.619   373225.178   0.078   2.086   1.574
+2019-02-28  231.15   0.712   380817.321   0.109   1.660   1.292
+2019-03-31  275.10   0.685   391170.631   0.119   1.732   1.396
+2019-04-30  168.00   0.967   365584.151   0.132   0.936   0.633
+2019-05-31  147.80   0.855   364292.321   0.096   1.293   0.877
+2019-06-30  108.75   0.928   354566.361   0.084   1.165   0.690
+2019-07-31   91.20   0.824   343842.953   0.060   1.591   0.927
+2019-08-31   59.95   0.938   337125.300   0.056   1.364   0.649
+2019-09-30   41.40   1.010   332214.115   0.046   1.360   0.485
+2019-10-31   70.40   1.351   322672.404   0.146   0.159  -0.114
+2019-11-30   68.30   1.250   304734.586   0.125   0.378   0.057
+2019-12-31   46.95   1.104   307080.227   0.067   0.905   0.305
+2020-01-31   39.25   0.726   309748.697   0.027   2.668   1.163
+2020-02-29   34.60   0.711   308663.091   0.023   2.956   1.204
+2020-03-31   16.15   1.844   270583.950   0.126  -0.571  -0.889
+\end{verbatim}
+
+I want to actually walk through this table rather than just show it, because every column here has a story, and I learned the model far better by reading my own output line by line than I did by deriving it on paper.
+
+\paragraph{July 2018 — the safest Yes Bank ever looked in my data.} $\DD=5.697$, the highest value in the whole series. This is the month CARE gave Yes Bank its AAA upgrade, and my model agrees that, by its own lights, the bank genuinely looked rock-solid at that moment: equity volatility was a low 22.9\%, and the implied asset cushion over the default point was enormous. I want to flag something important here, though — my model agreeing with CARE in July 2018 is not the model being vindicated. Both were reading the same calm market and the same reported numbers. The test of the model isn't whether it agrees in the good months; it's what happens next.
+
+\paragraph{September 2018 — the number that moves in one line.} Between August 31 ($\DD=4.588$) and September 30 ($\DD=1.342$), distance to default fell by more than three full standard deviations in a single calendar month. This is the CEO-term shock hitting the share price. Notice what drove it mechanically: $\sigma_E$ nearly triples, from 28.4\% to 81.2\%, in the same window. A sudden crash doesn't just lower the price — it massively raises the \emph{measured volatility}, because my 60-day window now contains that huge one-day move. Both effects — lower $V$ (since $V$ is solved from a lower $E$) and higher $\sigma_V$ (since $\sigma_V$ is solved from a higher $\sigma_E$) — push $\DD$ down at the same time, through the denominator and the numerator together. This is exactly the mechanism behind the sharp drop I describe in Section~\ref{sec:verdict}, except now I'm looking at the actual two numbers that caused it, not just the headline result.
+
+\paragraph{Why $V$ barely falls even as the share price collapses.} This genuinely confused me the first time I looked at this table, so I want to walk through the confusion honestly. Between July 2018 ($V=371{,}938$) and September 2019 ($V=332{,}214$), Yes Bank's \emph{share price} fell from Rs 368 to Rs 41 — a 89\% collapse. But my solved \emph{asset value} $V$ only fell from about Rs 3.72 lakh crore to about Rs 3.32 lakh crore — about 11\%. At first I thought this was a bug in my solver. It isn't; it's the model telling me something real about leverage. Yes Bank's equity ($E$, the market cap) was always a small sliver on top of a much larger pile of liabilities ($D$, in the hundreds of thousands of crore). When a firm is this leveraged, a given percentage fall in the small equity sliver corresponds to a much smaller percentage fall in the (much larger) total asset value underneath it — the same rupee loss is a huge percentage of a small number and a tiny percentage of a big number. This is actually the mirror image of why $\sigma_E$ (92\% in some months) is so much larger than $\sigma_V$ (4.6\% to 14.6\% throughout): leverage amplifies the equity holder's percentage volatility relative to the firm's underlying asset volatility, in exactly the way equation~\eqref{eq:e2} says it should. Seeing this in my own numbers, rather than just in the symbols, is what made equation~\eqref{eq:e2} finally feel real to me instead of just algebraically true.
+
+\paragraph{October 2019 — the one month $d_2$ actually went negative.} $\DD=0.159$, $d_2=-0.114$. A negative $d_2$ means the risk-neutral default probability $\Ncdf(-d_2)$ was \emph{above} 50\% for that reading — the risk-neutral world, which I built in Section~\ref{sec:merton} specifically to price debt rather than to predict outcomes, was by this point pricing Yes Bank's debt as more likely to default than not. I want to be precise about what this does and doesn't mean: it does not mean I, or the model, am claiming Yes Bank was actually more likely than not to fail that month. It means that if you wanted to replicate Yes Bank's bonds using a risk-free asset and the stock, the maths implied a default probability above a coin-flip under the pricing measure. That's a market-implied pricing statement, not a forecast — exactly the distinction I built in Section~\ref{sec:physical-rn}, and this is the one month in my whole dataset where the distinction stopped being academic and started being the headline number itself.
+
+\paragraph{The March 2020 whiplash, in the actual numbers.} $\DD$ climbs from 0.905 (Dec 2019) to 2.668 (Jan 2020) to 2.956 (Feb 2020) — recovering most of the way back toward its 2018 level — before crashing to $-0.571$ by the 31 March close, after the moratorium had already happened. I sat with this for a while before writing Section~\ref{sec:verdict}'s verdict, because my honest first reaction was that the model had failed at the one moment that mattered most. What I now think happened, mechanically, is visible right there in the table: $\sigma_E$ drops to 0.027 (2.7\%) in February 2020 — an unusually \emph{calm} reading, because the huge volatility spike from October 2019 had, by February, aged out of my 60-day trailing window, while the actual news driving the bank toward the cliff (an unpublished quarterly loss) hadn't happened yet in a way the market could price. The model wasn't lying to me in February 2020. It was accurately reporting that the \emph{priced, observable} risk had calmed down, right before a shock that nobody outside the RBI could see arrived from outside the market entirely. That is, I think, the single most important sentence in this whole project, and I did not understand it until I'd built the pipeline and watched it produce a number I didn't expect.
+
+\section{Building the repository}
+
+Once the numbers were right, I didn't want this to live only as a PDF. I built a proper repository: a \texttt{src/} folder holding \texttt{yes\_bank\_dd.py} and \texttt{merton\_monte\_carlo.py}, a \texttt{data/} folder for the raw price CSV, an \texttt{outputs/} folder that the pipeline writes its computed series into, a \texttt{figures/} folder for every chart in this note, a \texttt{slides/} folder for the presentation version of this argument, and a \texttt{docs/} folder holding this note itself and its \LaTeX{} source. I wrote a README that states the headline verdict in the first paragraph, because I didn't want anyone — a recruiter, a professor, future-me — to have to read twenty pages to find out what I actually found. I licensed the code MIT, added a \texttt{.gitignore} and a \texttt{requirements.txt}, and made the price-lookup logic in \texttt{yes\_bank\_dd.py} search for any CSV file whose name contains ``yes'' and ``bank'' in its own folder or a sibling \texttt{data/} folder, rather than hard-coding one exact filename — a small thing, but it's the difference between a script that only ever runs on my laptop and one a stranger could actually clone and run.

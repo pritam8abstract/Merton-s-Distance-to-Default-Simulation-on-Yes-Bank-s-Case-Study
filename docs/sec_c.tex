@@ -1,0 +1,90 @@
+\section{The synthesis and close}
+\label{sec:synth}
+I'll say this plainly, because I think it's the single sentence this entire project was built to earn the right to say: the two approaches fail in opposite ways, and neither one is optional. Ratings are slow, stepwise and dependent on disclosure, but they can weigh private information, management quality and regulatory context, and they anchor mandates and covenants in a way a raw number from a model never could. Market-implied models are continuous, fast and cheap to update, but they are noisy, blind to losses the market cannot see, and structurally awkward for banks specifically, for the reasons I set out in Section~\ref{sec:limits}. Yes Bank shows both faults in the same case study: the market signalled danger more than a year before the agencies caught up, and neither the market nor the agencies anticipated the specific week of the RBI's intervention.
+
+\begin{keybox}{Take-away, in my own words}
+I didn't go looking for a tidy answer, and I don't think I found one — I found a real, specific, dated answer instead, which I think is more useful. Neither agency ratings nor market-implied models are sufficient alone. A bank, an investor, or a regulator that only watches one of them is choosing which kind of blind spot to live with. Real risk management uses both: the committee's slower judgement for what can't be priced from the outside, and the market's faster price for what changes every single day whether a committee is in session or not.
+\end{keybox}
+
+Where this idea led next, as a pointer rather than core content: Vasicek's one-factor extension of the Merton model underlies the Basel IRB regulatory capital formula — the same equity-as-option logic I built in Part~\ref{part:theory}, scaled up into the formula banks use to compute regulatory capital against an entire loan portfolio rather than a single firm.
+
+\section{What I verified, what changed, and what I still could not confirm}
+\label{sec:verify}
+I want this section to be an honest accounting, not a formality. When I first wrote this note, several dates below were marked as unverified. I went back and checked each one against a primary source — a company filing, an agency's own release, or in one case an actual SEBI adjudication order — and most of them are now resolved. I'm listing what changed as well as what's still open, because I think showing the correction is more useful to a reader than silently fixing it and pretending the first draft never happened.
+
+\begin{itemize}
+\item \textbf{Resolved --- the RBI's letter on the CEO's term.} I now have this to a primary source: the RBI's letter is dated 17 September 2018; Yes Bank disclosed it to the exchanges on 19 September; the sharpest part of the market reaction landed on 21 September \cite{bsSep19disc,bsSep21fall}.
+\item \textbf{Resolved --- CRISIL's pre-crisis silence.} I confirmed this rather than just assuming it: I found no CRISIL rating action on Yes Bank's debt before the 19 March 2020 CD rating. ICRA, CARE, India Ratings and Moody's were the active agencies throughout the stress period.
+\item \textbf{Resolved, and corrected --- the CARE/SEBI interference finding.} I initially had this wrong in a way I think is worth being transparent about: I wrote down that SEBI had penalised CARE specifically for delaying its Yes Bank rating. Having read SEBI's actual 2023 order \cite{sebiCareOrder}, the finding is more specific: interference was proven for CARE's handling of DHFL; for Yes Bank specifically, the same order states the interference charge could not be sustained on the evidence. I've corrected the claim in Section~\ref{sec:case} rather than leaving the stronger, inaccurate version in place.
+\item \textbf{Resolved --- intermediate rating steps I was missing.} My first timeline had a large, unexplained gap between CARE's November 2018 downgrade and its November 2019 cut. On re-verification I found three India Ratings downgrades I'd missed entirely (8 May 2019, 31 August 2019, 19 December 2019) plus a fourth on 12 February 2020 — meaning the agencies were considerably more active across 2019 than my first draft gave them credit for, even though each individual action still lagged my computed DD series.
+\item \textbf{Resolved --- CARE's October 2018 watch date.} Confirmed to CARE's own press release, reported the same day: 1 October 2018 \cite{bsCareOct1}.
+\item \textbf{Resolved --- India Ratings' May 2019 action.} Confirmed: the downgrade was filed late on 8 May 2019, reported the following morning \cite{bsIndraMay19}.
+\item \textbf{Resolved --- SBI's stake and the lock-in.} Confirmed against the Reconstruction Scheme's own text \cite{yesReconScheme} and SBI's own disclosures \cite{sbiStakeScheme}: the Scheme capped the investor bank's stake at 49\% and required a minimum of 26\% for three years from infusion; SBI's initial tranche gave it roughly 48.2\%, building toward a total commitment of Rs 7,250 crore. The three-year lock-in genuinely did run until 13 March 2023, which I can confirm independently since Yes Bank's stock fell when that lock-in expired on schedule.
+\item \textbf{Still open --- a few balance-sheet interpolations.} I still had to interpolate the ``other liabilities'' line for June 2018 and December 2018, and the whole December 2017 figure, since I could not find a disclosed breakdown for those exact dates. I also still assume roughly 30-day publication lags for a few quarters where I used the actual filing date for others. These are my modelling choices, not facts I failed to look up, and I flag them as such rather than as things still to verify.
+\item \textbf{Still open --- the exact QIP date.} Yes Bank's own press release names the month (August 2019) but not the exact day; I used 15 August as a working assumption.
+\item \textbf{Not primary-sourced, and not meant to be --- Enron and the 2007--09 crisis.} These remain general historical background in Section~\ref{sec:critique}, included for context, not as claims I'm treating as load-bearing for my own result.
+\item \textbf{Expected to vary --- Monte Carlo output.} The exact figures in Section~\ref{sec:build-mc} will shift slightly with a different random seed or machine; the convergence pattern will not.
+\end{itemize}
+
+\appendix
+\section{Glossary}
+\begingroup\small
+\begin{description}[leftmargin=2.4cm,labelwidth=2.2cm,itemsep=1pt]
+\item[Asset volatility] Yearly standard deviation of a firm's asset returns ($\sigma_V$); not directly observable.
+\item[Call option] The right to buy an asset at strike $K$ at expiry; pays $\max(S_T-K,0)$.
+\item[CAGR] Compound annual growth rate: the constant yearly growth that turns a start value into the end value; a geometric average.
+\item[Credit spread] Extra yield a risky bond pays over the risk-free rate.
+\item[Default point] The debt level the assets must cover ($D$); the model's threshold for default.
+\item[Distance to default] Number of standard deviations between expected asset value at the horizon and the default point.
+\item[EDF] Expected default frequency: KMV's empirical probability, read from its history of defaults for firms with a given DD.
+\item[GBM] Geometric Brownian motion: a random path with random percentage steps.
+\item[Lognormal] A variable whose logarithm is normally distributed; always positive.
+\item[Moratorium] A legal suspension of a bank's obligations (here, capped withdrawals) under Section 45 of the Banking Regulation Act, 1949.
+\item[Monte Carlo simulation] Estimating a probability by generating many random scenarios and counting outcomes, rather than solving a formula.
+\item[Reconstruction Scheme] The RBI/government order under which a failed bank is restructured and recapitalised by new investors; for Yes Bank, notified 13 March 2020.
+\item[Risk-neutral] Priced as if investors demanded no premium for risk; all assets grow at $r$.
+\item[Structural model] A credit model that derives default from assets versus debt.
+\item[Through-the-cycle] A rating philosophy that aims to hold across economic ups and downs.
+\item[Volatility drag] The reduction in compound growth caused by volatility, about $\tfrac12\sigma^2$ per year.
+\end{description}
+\endgroup
+
+\begin{thebibliography}{99}\small
+\bibitem{merton1974} R.\,C.\ Merton (1974). On the pricing of corporate debt: the risk structure of interest rates. \emph{Journal of Finance} 29(2), 449--470.
+\bibitem{blackScholes1973} F.\ Black and M.\ Scholes (1973). The pricing of options and corporate liabilities. \emph{Journal of Political Economy} 81(3), 637--654.
+\bibitem{blackcox1976} F.\ Black and J.\,C.\ Cox (1976). Valuing corporate securities: some effects of bond indenture provisions. \emph{Journal of Finance} 31(2), 351--367.
+\bibitem{crosbie2003} P.\ Crosbie and J.\ Bohn (2003). \emph{Modeling Default Risk}. Moody's KMV.
+\bibitem{huang2012} J.-Z.\ Huang and M.\ Huang (2012). How much of the corporate-treasury yield spread is due to credit risk? \emph{Review of Asset Pricing Studies} 2(2), 153--202.
+\bibitem{hull} J.\ Hull. \emph{Options, Futures, and Other Derivatives} (chapters on Black--Scholes and credit risk).
+\bibitem{malz2011} A.\ Malz (2011). \emph{Financial Risk Management: Models, History, and Institutions}. Wiley.
+\bibitem{bsCareWatch} Business Standard (1 Oct 2018). CARE Ratings put certain YES Bank debt instruments on credit watch. \url{https://www.business-standard.com/article/finance/care-ratings-put-certain-yes-bank-debt-instruments-on-credit-watch-118100100144_1.html}
+\bibitem{bsIcraWatch} Business Standard (17 Nov 2018). Icra places Yes Bank's rating on watch with negative effect over RBI order. \url{https://www.business-standard.com/amp/article/finance/icra-places-yes-bank-s-rating-on-watch-with-negative-effect-over-rbi-order-118111700418_1.html}
+\bibitem{bsNov28} Business Standard/Reuters (29 Nov 2018). Yes Bank hits over two-year low after ICRA, CARE cut ratings. \url{https://www.business-standard.com/amp/article/reuters/yes-bank-hits-over-two-year-low-after-icra-care-cut-ratings-118112900183_1.html}; and Business Standard (29 Nov 2018), Yes Bank hits 52-week low after ratings downgrade (Moody's).
+\bibitem{bsQ3FY19} Business Standard (24 Jan 2019). Yes Bank vaults on high volume after Q3 result. \url{https://www.business-standard.com/article/news-cm/yes-bank-vaults-on-high-volume-after-q3-result-119012400681_1.html}
+\bibitem{bsDivFY16} Business Standard (12 May 2017). Yes Bank under-reported NPAs by over Rs 4,000 crore in FY16. \url{https://www.business-standard.com/article/pti-stories/yes-bank-under-reported-npas-by-over-rs-4-000-crore-in-fy16-117051201439_1.html}
+\bibitem{bsDivFY18} Business Standard (13 Feb 2019). RBI finds no divergence in provisioning, asset classification: Yes Bank. \url{https://www.business-standard.com/amp/article/pti-stories/rbi-finds-no-divergence-in-provisioning-asset-classification-yes-bank-119021301416_1.html}
+\bibitem{bsIcraMay19} Business Standard (4 May 2019). Icra downgrades YES Bank's bonds as quality of large borrowers dwindles. \url{https://www.business-standard.com/amp/article/finance/icra-downgrades-yes-bank-s-bonds-as-quality-of-large-borrowers-dwindles-119050400299_1.html}
+\bibitem{bsFall19} Business Standard (6 May 2019). YES Bank falls 5\% as ICRA downgrades bonds rating. \url{https://www.business-standard.com/amp/article/markets/yes-bank-falls-5-as-icra-downgrades-bonds-rating-119050600162_1.html}
+\bibitem{bsIndraMay19} Business Standard (9 May 2019). India Ratings downgrades Yes Bank's long-term ratings. \url{https://www.business-standard.com/amp/article/news-ani/india-ratings-downgrades-yes-bank-s-long-term-ratings-119050900352_1.html}
+\bibitem{icraJul19} ICRA (24 Jul 2019). Yes Bank Limited: Long-term ratings downgraded (rationale). \url{https://www.icra.in/Rating/GetRationalReportFilePdf/82233~Yes\%20Bank_r_24072019.pdf}
+\bibitem{bsIcraJul19} Business Standard (25 Jul 2019). ICRA downgrades YES Bank's long-term rating for bonds worth Rs 32,911 crore. \url{https://www.business-standard.com/amp/article/economy-policy/icra-downgrades-yes-bank-s-long-term-rating-for-bonds-worth-rs-32-911-crore-119072500053_1.html}
+\bibitem{ycQ2} YES BANK (1 Nov 2019). Press release: financial results for the quarter ended 30 September 2019. \url{https://www.yes.bank.in} (investor relations, Q2 FY20 press release).
+\bibitem{bsCareNov19} Business Standard (14 Nov 2019). Yes Bank gets revision in credit ratings from CARE. \url{https://www.business-standard.com/article/news-cm/yes-bank-gets-revision-in-credit-ratings-from-care-119111400471_1.html}
+\bibitem{bsDiv19} Business Standard (20 Nov 2019). RBI found Rs 3,277-cr divergence in NPA provisioning for FY19: YES Bank. \url{https://www.business-standard.com/amp/article/finance/rbi-found-rs-3-277-cr-divergence-in-npa-provisioning-for-fy19-yes-bank-119111901799_1.html}
+\bibitem{bsIndraDec19} Business Standard (19 Dec 2019). Yes Bank receives downward revision in ratings; placed on rating watch negative. \url{https://www.business-standard.com/amp/article/news-cm/yes-bank-receives-downward-revision-in-ratings-placed-on-rating-watch-negative-119121900769_1.html}
+\bibitem{bsCareDec19} Business Standard (1 Jan 2020). Yes Bank slips on rating downgrade. \url{https://www.business-standard.com/amp/article/news-cm/yes-bank-slips-on-rating-downgrade-120010100165_1.html}
+\bibitem{icraMar20} ICRA (6 Mar 2020). Yes Bank Limited: Ratings downgraded. \url{https://www.axistrustee.in/pdf/Yes\%20Bank\%20Limited\%20-(ICRA)\%206th\%20March\%202020.pdf}
+\bibitem{bsMar9} Business Standard (9 Mar 2020). Rating agencies downgrade Yes Bank. \url{https://www.business-standard.com/article/news-cm/rating-agencies-downgrade-yes-bank-120030900320_1.html}
+\bibitem{btQ3} Business Today (15 Mar 2020). YES Bank Q3 net loss spikes to Rs 18,564 cr, its worst ever. \url{https://www.businesstoday.in/latest/corporate/story/yes-bank-suffers-rs-9000-crore-in-december-quarter-252050-2020-03-14}
+\bibitem{crisilMar20} CRISIL (19 Mar 2020). YES Bank Limited: rating rationale. \url{https://www.crisil.com/mnt/winshare/Ratings/RatingList/RatingDocs/YES_Bank_Limited_March_19_2020_RR.html}
+\bibitem{angel3q19} Angel Broking. Yes Bank 1QFY2019 and 3QFY2019 result updates (quarterly deposits and borrowings).
+\bibitem{screenerYes} Screener.in. Yes Bank Ltd, consolidated balance sheet (March 2019). \url{https://www.screener.in/company/532648/consolidated}
+\bibitem{bsSep19disc} Business Standard / IANS (19 Sep 2018). Yes Bank CEO Rana Kapoor's tenure to end on Jan 31, 2019. \url{https://www.business-standard.com/article/news-ians/yes-bank-ceo-rana-kapoor-s-tenure-to-end-on-jan-31-2019-118091901101_1.html}
+\bibitem{bsSep21fall} Business Standard / PTI (21 Sep 2018). Yes Bank sinks 34\%; m-cap erodes by Rs 14,452 cr as RBI trims Rana Kapoor's term as CEO. \url{https://www.business-standard.com/article/pti-stories/yes-bank-sinks-34-m-cap-erodes-by-rs-14-452-cr-as-rbi-trims-rana-kapoor-s-term-as-ceo-118092100272_1.html}
+\bibitem{bsCareOct1} Business Standard (1 Oct 2018). Asset quality outlook `stable', proportion of NPAs down in a year: YES Bank. \url{https://www.business-standard.com/article/finance/asset-quality-outlook-stable-proportion-of-npas-down-in-a-year-yes-bank-118100100416_1.html}
+\bibitem{bsIndraAug19} Business Standard / PTI (31 Aug 2019). India Ratings downgrades YES Bank to `IND A+', says `outlook is negative'. \url{https://www.business-standard.com/amp/article/pti-stories/india-ratings-downgrades-yes-bank-outlook-negative-119083100463_1.html}
+\bibitem{bsIndraFeb20} Business Standard (12 Feb 2020). India Ratings downgrades Yes Bank issuer rating from `A' to `A-'. \url{https://www.business-standard.com/amp/article/finance/india-ratings-downgrades-yes-bank-issuer-rating-from-a-to-a-120021201750_1.html}
+\bibitem{yesReconScheme} Reserve Bank of India / Government of India (13 Mar 2020). Yes Bank Limited Reconstruction Scheme, 2020, issued under Section 45(4)--(7) of the Banking Regulation Act, 1949.
+\bibitem{sbiStakeScheme} Business Standard (6 Mar 2020 and 18 Mar 2020). YES Bank `won't fall off the cliff', SBI to rescue it with 49\% stake; SBI announces Rs 7,250-crore fund infusion into Yes Bank. \url{https://www.business-standard.com/amp/article/companies/sbi-to-rescue-yes-bank-with-49-stake-govt-says-depositors-money-safe-120030601650_1.html}
+\bibitem{sebiCareOrder} Securities and Exchange Board of India (2023). Order in the matter of CARE Ratings Ltd. (WTM/ASB/DDHS/DDHS-RAC-POD-II/25845/2023-24). \url{https://www.sebi.gov.in/sebi_data/attachdocs/apr-2023/1681988405288_3.pdf}
+\end{thebibliography}

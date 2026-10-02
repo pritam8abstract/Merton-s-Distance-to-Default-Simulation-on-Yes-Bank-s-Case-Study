@@ -1,0 +1,107 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,array,tabularx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage[expansion=false]{microtype}
+\usepackage{fancyhdr}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=NavyBlue,urlcolor=NavyBlue,citecolor=NavyBlue]{hyperref}
+
+\definecolor{navy}{HTML}{14213D}
+\definecolor{crim}{HTML}{C0392B}
+\definecolor{teal}{HTML}{1F8A7A}
+\definecolor{paper}{HTML}{EEF2F8}
+\definecolor{gold}{HTML}{FFF4DC}
+
+% ---- boxes -------------------------------------------------------------
+\newtcolorbox{defbox}[1]{breakable,colback=paper,colframe=navy,fonttitle=\bfseries,title={Plain English: #1},boxrule=0.6pt,arc=2pt}
+\newtcolorbox{keybox}[1]{breakable,colback=gold,colframe=orange!70!black,fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt}
+\newtcolorbox{warnbox}[1]{breakable,colback=crim!6,colframe=crim,fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt}
+
+% ---- math shortcuts ------------------------------------------------------
+\newcommand{\Ncdf}{\mathrm{N}}          % standard normal CDF
+\newcommand{\PD}{\mathrm{PD}}
+\newcommand{\DD}{\mathrm{DD}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Rs}{\textup{Rs}\,}
+
+\lstset{basicstyle=\ttfamily\footnotesize,keywordstyle=\color{navy}\bfseries,commentstyle=\color{teal}\itshape,
+  stringstyle=\color{crim},numbers=left,numberstyle=\tiny\color{gray},frame=single,rulecolor=\color{navy!40},
+  breaklines=true,showstringspaces=false,language=Python,columns=fullflexible,xleftmargin=1.5em,framexleftmargin=1.5em}
+
+\captionsetup{font=small,labelfont=bf}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{4pt}\setlength{\parindent}{0pt}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small From Committee to Continuum}\fancyhead[R]{\small MS37025 master note}\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+% ---- title block ---------------------------------------------------------
+\begin{tcolorbox}[colback=navy,colframe=navy,coltext=white,arc=3pt]
+{\Large\bfseries From Committee to Continuum}\\[3pt]
+{\large\itshape Can Markets Price Default Faster Than Rating Agencies?}\\[3pt]
+Master study note: credit ratings, the Merton/KMV model, and the Yes Bank case
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\textbf{Name:} & Dhritabrata Swarnakar\\
+\textbf{Roll No.:} & 25MSG1R16\\
+\textbf{Course:} & MS37025 --- Managing Financial Services and Institutions\\
+\textbf{Professor:} & S. L. Tulasi Devi\\
+\textbf{Department:} & Department of Management Studies, National Institute of Technology, Warangal\\
+\end{tabularx}
+
+\vspace{6pt}
+\begin{keybox}{What this project is, in one paragraph}
+This is a research project I built end to end: I derived a credit-risk model from first principles, wrote the code that runs it, ran it on Yes Bank's real price data, and then checked what I found against the real public record of what actually happened to Yes Bank between 2018 and 2020. Credit rating agencies (CRISIL, ICRA, CARE) judge a bank's default risk through a committee, at intervals, using what the bank discloses to them. The Merton model does something structurally different: it reads a default signal continuously, every single trading day, straight out of the bank's share price. My question was simple to state and hard to answer honestly: did that market-implied signal, which I call \emph{distance to default}, turn bad before the rating agencies downgraded Yes Bank, and before the RBI stepped in? I answer that with my own computed numbers in Section~\ref{sec:verdict}, I show you exactly how I built the pipeline that produced those numbers in Part~\ref{part:build}, and I spend Part~\ref{part:realworld} on the question that actually matters outside a classroom: so what? What does this tell a regulator, an investor, or a risk manager that they didn't already know?
+\end{keybox}
+
+\paragraph{How I've organised this, and how to read it.} Part~\ref{part:theory} is the theory, built from nothing — I assume you know algebra and basic finance, and nothing about option pricing. Part~\ref{part:case} is the Yes Bank case: the real timeline, corrected and verified against primary sources, and my results against it. Part~\ref{part:build} is the part most write-ups skip: the actual build, in the order I did it, with the real numbers my code spat out and what each number meant the moment I saw it. Part~\ref{part:realworld} is the real-world interpretation — not "what does the math say" but "what does this mean for how credit risk actually gets managed." Part~\ref{part:close} is the honest accounting: limitations, what I verified and how, and a glossary. Boxes marked \emph{Plain English} restate a formula in everyday words with a number plugged in; boxes marked \emph{FRM link} note where this shows up in FRM-style study material.
+
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}cp{10.8cm}@{}}\toprule
+\textbf{Symbol} & \textbf{Meaning (used throughout)}\\\midrule
+$V$ & value of the firm's assets today (not directly observable)\\
+$D$ & default point: the debt level the assets must cover\\
+$E$ & value of the firm's equity (share price $\times$ number of shares)\\
+$\mu$ & expected asset drift: the average yearly growth rate of $V$ in the real world\\
+$\sigma$ (or $\sigma_V$) & asset volatility: yearly standard deviation of asset returns\\
+$\sigma_E$ & equity volatility: yearly standard deviation of equity returns\\
+$T$ & time horizon in years (usually 1)\\
+$r$ & risk-free interest rate (continuously compounded)\\
+$\Ncdf(\cdot)$ & standard normal cumulative distribution function\\
+$\DD$ & distance to default, in standard-deviation units\\\bottomrule
+\end{tabular}
+\end{table}
+
+\tableofcontents
+\clearpage
+
+\part{The Theory: Building Merton From Nothing}
+\label{part:theory}
+\input{sec_a}
+
+\part{The Case: Yes Bank, 2018--2020}
+\label{part:case}
+\input{sec_b}
+
+\part{The Build: What I Actually Did, In Order}
+\label{part:build}
+\input{sec_d}
+
+\part{What This Means in the Real World}
+\label{part:realworld}
+\input{sec_e}
+
+\part{Closing the Loop}
+\label{part:close}
+\input{sec_c}
+
+\end{document}

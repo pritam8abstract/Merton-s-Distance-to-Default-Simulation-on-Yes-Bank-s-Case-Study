@@ -1,0 +1,225 @@
+\section{The setup: how India assesses bank credit risk today}
+
+Before I touch a single formula, I want to lay out the system I'm arguing against — or rather, the system I'm testing an alternative to. I'm not claiming credit rating agencies are incompetent. I'm claiming their process has a built-in lag, and I wanted to measure that lag, in days, on a real bank, rather than just asserting it.
+
+\subsection{What a credit rating is}
+\begin{defbox}{credit rating}
+A credit rating is an agency's \emph{opinion}, written as a letter grade, of how likely a borrower is to fail to pay what it owes. In India the main agencies are CRISIL, ICRA and CARE (India Ratings and Brickwork also rate banks). ``Default'' here means missing a payment on a rated obligation. Grades run from AAA (very low default risk) down through the AA, A and BBB bands to D (already in default). BBB$-$ and above is called \emph{investment grade}; below that is \emph{sub-investment grade}, informally ``junk''.
+\end{defbox}
+
+A bank has many obligations, so it has many ratings: one for senior bonds, one for subordinated (Tier~II) bonds, another for additional Tier~I (AT-1) bonds, and a short-term rating for certificates of deposit. The ratings differ because the claims differ in how much loss they absorb. AT-1 bonds, for example, can be written down when the bank's capital falls below a trigger, so they are rated several \emph{notches} (one step on the letter scale, e.g.\ AA to AA$-$) below senior debt.
+
+\subsection{How the process works}
+\begin{enumerate}
+\item \textbf{Evidence gathering.} Analysts read audited financial statements, regulatory filings and management presentations, and meet management. For a bank they focus on capital adequacy (the buffer of own funds against risky assets), asset quality (how many loans are bad), profitability and funding.
+\item \textbf{Committee decision.} A rating committee votes on the grade. The output is a judgement, not the result of a formula.
+\item \textbf{Surveillance.} Once assigned, the rating is monitored. It is formally reviewed at intervals (at least once a year) and reviewed earlier after significant events. Agencies also signal likely changes through an \emph{outlook} (positive, stable, negative: the direction a rating may move over the medium term) or a \emph{watch} (a shorter-term flag that a decision is pending after a specific event).
+\end{enumerate}
+
+\begin{keybox}{Three built-in properties}
+\textbf{Committee-based} (judgement, not a formula), \textbf{periodic} (the published grade changes at discrete moments), and \textbf{reliant on disclosure} (agencies see what the bank reports, when it reports it). Each property is a possible source of delay. The next section asks whether the delay is a flaw or a design choice.
+\end{keybox}
+
+\begin{defbox}{the school report card vs. the fitness tracker}
+Here is the analogy I kept coming back to while building this project. A credit rating is like a school report card: it is issued at fixed points in the term, it reflects a teacher's holistic judgement of the whole term so far, and it deliberately does not change every time a student has one bad week — a single poor quiz shouldn't crash a semester grade that otherwise reflects consistent effort. A fitness tracker, on the other hand, updates every second from a pulse sensor on your wrist. It has no judgement in it at all — it just reports a number, continuously, whether that number means anything in isolation or not. The Merton model I build in this project is the fitness tracker. The rating agencies are the report card. Neither is wrong to exist; they are built to answer different questions, and the whole point of my project is to see how differently they actually behaved on one real patient: Yes Bank.
+\end{defbox}
+
+\section{The critique: why ratings are structurally slow}
+\label{sec:critique}
+
+\subsection{Ratings are sticky by design}
+Agencies describe their ratings as \emph{through-the-cycle}: an assessment meant to hold across the ups and downs of the economy rather than reflect every swing in prices. That is deliberate. Investors and regulators use ratings in mandates and covenants (for example, a fund that may only hold investment-grade bonds), so a rating that flipped with each market move would force repeated buying and selling. Agencies therefore prefer to wait for documented evidence before acting. The result is \emph{stickiness}: the rating moves late and in steps.
+
+\begin{defbox}{sticky rating}
+A sticky rating is one that changes slowly and in discrete steps even while the underlying credit quality is changing continuously. Stickiness is not a bug in the agency's process. It follows from a committee that needs evidence, a disclosure calendar that delivers evidence quarterly, and a rating that has real consequences for holders.
+\end{defbox}
+
+\subsection{A recurring pattern}
+The criticism that agencies react late is not specific to India. Two well-known global episodes are usually cited.
+\begin{itemize}
+\item \textbf{Enron (2001).} Enron was still rated investment grade in late November 2001. The agencies cut it to sub-investment grade on 28 November, days before its bankruptcy filing on 2 December 2001.
+\item \textbf{The 2007--2009 crisis.} Large volumes of mortgage-linked securities carried AAA ratings and were then downgraded in bulk from mid-2007 onward, after mortgage losses had already begun to show.
+\end{itemize}
+Both are widely documented; they are background here, and the Yes Bank case in Section~\ref{sec:case} is the local test.
+
+\subsection{The Yes Bank illustration}
+CARE upgraded Yes Bank's senior and Tier~II debt to AAA on 5 July 2018 \cite{bsCareWatch}. On 21 September 2018 the RBI declined to give the founder-CEO a fresh three-year term \cite{bsIcraWatch}, and the share price fell 29\% that day (in our price data). CARE placed its AAA on credit watch about ten days later, ICRA placed its rating on watch on 17 November \cite{bsIcraWatch}, and the first actual downgrades by ICRA and CARE came on 28 November 2018 \cite{bsNov28}. Between the AAA upgrade date and the day before the first downgrade, the share price had fallen 48\%. That gap between a fast-moving price and a slow-moving rating is the empirical question of this note.
+
+\section{The alternative: Merton's model, built from first principles}
+\label{sec:merton}
+
+\subsection{The problem, and why option pricing applies}
+Here is what I was actually trying to do: get the probability that a firm cannot pay its debts, using information that updates every single day instead of every few months. The firm's equity trades on an exchange, so I can observe its value and how much it bounces around, every trading day, for free, from any stock exchange's closing price. Merton (1974) \cite{merton1974} made the connection I needed: a firm's equity has the exact same shape of payoff as a financial \emph{option}, so the maths built for pricing options can be turned around and used to read default risk straight out of equity prices. This single observation is the hinge the entire rest of this project swings on, so I want to build it slowly and make sure it actually lands before I write a single line of code.
+
+\begin{defbox}{structural model}
+A \emph{structural} credit model explains default from the firm's own balance-sheet structure: the firm defaults when its assets are worth too little to cover its debts. It contrasts with \emph{reduced-form} models, which treat default as a random event with a probability that depends on outside variables and never look at assets versus debt.
+\end{defbox}
+
+Set up the simplest firm. It is financed by shareholders' equity and by a single zero-coupon bond: a bond that pays one lump sum, the face value $D$, at a fixed date $T$ and nothing before. At $T$ two things can happen.
+\begin{itemize}
+\item If the assets are worth more than $D$ ($V_T>D$), the firm repays the debt in full and shareholders keep the remainder $V_T-D$.
+\item If the assets are worth less ($V_T<D$), the firm cannot pay. Lenders take over the assets, and shareholders receive nothing (limited liability: they cannot be asked for more).
+\end{itemize}
+So shareholders receive $\max(V_T-D,\,0)$, and lenders receive $\min(V_T,\,D)$.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.78\textwidth]{figs/payoff.png}
+\caption{Payoffs at maturity. Equity is a call option on the firm's assets with strike $D$; debt is capped at $D$ and loses value whenever assets fall short.}
+\end{figure}
+
+A \emph{call option} on an asset with \emph{strike price} $K$ pays $\max(S_T-K,0)$ at expiry, where $S_T$ is the asset's price then. Equity has exactly this payoff with $S_T=V_T$ and $K=D$. \textbf{Equity is a call option on the firm's assets, with the debt as the strike price.} Default is the event that the option expires worthless, $V_T<D$. Equivalently, lenders own risk-free debt but have sold shareholders a put option on the assets, and the value of that put is what a credit spread compensates for.
+
+\begin{defbox}{the mortgaged-flat analogy}
+I find this easiest to picture with a home loan. Say you buy a flat worth 1 crore using a 70 lakh bank loan, and the loan is structured so the whole amount is due at the end of the term in one shot. You are, economically, in exactly the shareholders' position: you own whatever is left after the loan is repaid. If the flat's market value rises to 1.3 crore by the time the loan is due, you pay off the 70 lakh and keep 60 lakh of profit. But if a flood damages the building and its value crashes to 50 lakh — below what you owe — you are not on the hook for the shortfall. You simply hand the keys to the bank (this is sometimes called ``jingle mail'' in mortgage markets) and walk away owing nothing more, because the loan is secured only against the flat. Your payoff was $\max(\text{flat value} - \text{loan}, 0)$ the whole time, whether you realised it or not — and that is a call option. The bank, meanwhile, was never going to get more than what it was owed even if the flat tripled in value, and it bears the loss if the flat's value falls below the loan — exactly the lender's position in Merton's model.
+\end{defbox}
+
+\begin{keybox}{Why this helps}
+If we can describe how $V$ moves, then the probability of default is simply the probability that a random variable ends below $D$. The next subsection builds the tools to describe that movement.
+\end{keybox}
+
+\subsection{Prerequisites, from scratch}
+
+\subsubsection{The normal distribution and $\Ncdf(\cdot)$}
+A random variable $Z$ is \emph{standard normal} if it follows the bell curve with mean~0 and standard deviation~1. The function $\Ncdf(x)=\Pr(Z\le x)$ gives the probability that $Z$ falls at or below $x$. Useful anchors: $\Ncdf(0)=0.5$, $\Ncdf(-1)\approx0.159$, $\Ncdf(-2)\approx0.023$, $\Ncdf(-3)\approx0.0013$. Going one standard deviation into the left tail leaves a 16\% chance; three leaves about 0.13\%. This mapping from ``number of standard deviations'' to ``probability'' is the engine behind distance to default.
+
+\subsubsection{Why asset values are lognormal, not normal}
+Suppose asset value could be modelled as a normal variable. It could then go negative, but a firm's assets cannot be worth less than zero, and shocks act in \emph{percentage} terms (a 10\% fall hurts a large firm more in rupees than a small one). So we model the \emph{log} of asset value as normal. A variable whose logarithm is normal is called \emph{lognormal}. It stays positive, and its distribution is skewed: a long tail to the upside and a bounded floor at zero.
+
+\subsubsection{Geometric Brownian motion (GBM)}
+GBM is the standard model for a quantity that grows by random percentage steps. Over a tiny time step $dt$,
+\begin{equation}
+\frac{dV_t}{V_t} \;=\; \mu\,dt \;+\; \sigma\,dW_t ,
+\label{eq:gbm}
+\end{equation}
+where
+\begin{itemize}
+\item $dV_t/V_t$ is the \emph{percentage change} in asset value during the step;
+\item $\mu$ is the \textbf{drift}: the average yearly percentage growth. If $\mu=8\%$, assets grow on average 8\% a year, ignoring randomness;
+\item $\sigma$ is the \textbf{volatility}: the standard deviation of the yearly percentage change. If $\sigma=25\%$, a typical yearly swing around the average is about 25 percentage points;
+\item $dW_t$ is a \emph{Wiener increment}: a random shock, normally distributed with mean~0 and variance $dt$, independent from step to step.
+\end{itemize}
+Solving equation~\eqref{eq:gbm} (this uses It\^o's lemma, the calculus rule for random processes) gives the value at time $T$:
+\begin{equation}
+V_T \;=\; V_0\,\exp\!\Big[\big(\mu-\tfrac12\sigma^2\big)T+\sigma\sqrt{T}\,Z\Big],\qquad Z\sim\text{N}(0,1).
+\label{eq:gbmsol}
+\end{equation}
+Taking logs, $\ln V_T$ is normal with mean $\ln V_0+(\mu-\tfrac12\sigma^2)T$ and standard deviation $\sigma\sqrt T$. That is exactly the lognormal shape described above.
+
+\begin{warnbox}{The $\mu-\tfrac12\sigma^2$ term is not CAGR}
+Equation~\eqref{eq:gbmsol} contains $\mu-\tfrac12\sigma^2$, not $\mu$. The reason is \emph{volatility drag}. Take an asset worth 100 that rises 50\% and then falls 50\%. The arithmetic average of the two returns is $0\%$, yet the asset is worth $100\times1.5\times0.5=75$. Randomness costs growth, and the cost is about $\tfrac12\sigma^2$ per year.
+
+Precisely: the \emph{mean} of $V_T$ grows at $\mu$, since $\E[V_T]=V_0e^{\mu T}$, but the \emph{median} (the typical outcome) grows at $\mu-\tfrac12\sigma^2$, since the median of $V_T$ is $V_0e^{(\mu-\frac12\sigma^2)T}$. The term is the drag already built into the formula, subtracted once.
+
+\textbf{Why substituting CAGR for $\mu$ is wrong.} The compound annual growth rate (CAGR) is the growth rate that turns the start value into the realised end value. It is a geometric average, and it \emph{already contains} the volatility drag: over long samples, CAGR $\approx\mu-\tfrac12\sigma^2$. Replace $\mu$ by CAGR in the formula and the drag is subtracted twice: once when the CAGR was measured, and again by $-\tfrac12\sigma^2$. The input must be the arithmetic expected return $\mu$.
+\end{warnbox}
+
+For our illustrative firm ($V_0=120$, $\mu=8\%$, $\sigma=25\%$, $T=1$) the mean end value is $120e^{0.08}=130.0$, while the median is $120e^{0.08-0.03125}=126.0$.
+
+\subsubsection{Where $\Ncdf(d_2)$ comes from in Black--Scholes}
+The Black--Scholes formula (1973) \cite{blackScholes1973} prices a European call option (exercisable only at expiry). Its key idea is to price by \emph{no-arbitrage} (no risk-free profit): one can build a portfolio of the asset and cash that copies the option's payoff, so the option's price equals the cost of that portfolio. This pricing does not depend on investors' appetite for risk, so it can be computed in an imagined \emph{risk-neutral world}, where every asset grows at the risk-free rate $r$ instead of its real-world drift.
+
+\begin{defbox}{risk-neutral}
+``Risk-neutral'' means priced as if investors were indifferent to risk and asked for no extra return for bearing it. In that imagined world all assets grow at $r$. It is a computational device that gives the right \emph{price}; it does not describe how assets really grow. Probabilities computed in it are called risk-neutral probabilities.
+
+Here's the version of this I actually hold onto: imagine two insurance agents valuing the same fire-insurance policy on a warehouse. One agent genuinely believes the warehouse has a 2\% chance of burning down this year — that's the real-world, physical probability. The other agent doesn't care what the true odds are; she just wants to quote a price that makes the insurer indifferent between selling the policy and not selling it, given what she can hedge in the market. Her quoted price might imply a 3\% chance of fire, not because she thinks fires are more likely, but because she's baked in a margin for the risk she's taking on. That 3\% is her risk-neutral number — useful for pricing, misleading if you mistake it for her actual belief about fire risk.
+\end{defbox}
+
+For a call with strike $K$ on an asset worth $S$, the Black--Scholes value is $S\,\Ncdf(d_1)-Ke^{-rT}\Ncdf(d_2)$, where
+\[
+d_1=\frac{\ln(S/K)+\big(r+\tfrac12\sigma^2\big)T}{\sigma\sqrt T},\qquad d_2=d_1-\sigma\sqrt T .
+\]
+The term $\Ncdf(d_2)$ has a clean meaning: it is the \textbf{risk-neutral probability that the option finishes in the money}, i.e.\ that $S_T>K$. The second term of the price, $Ke^{-rT}\Ncdf(d_2)$, is then the present value of paying $K$ times the probability that you have to. The term $\Ncdf(d_1)$ is the option's \emph{delta}: how many rupees the option value moves when the asset moves by one rupee. We will use both.
+
+\subsection{Merton's model: equity and debt values}
+Assume $V$ follows GBM, the firm has one zero-coupon bond with face $D$ due at $T$, markets are frictionless, and default can happen only at $T$. Equity is a call option on $V$ with strike $D$, so by Black--Scholes
+\begin{equation}
+E \;=\; V\,\Ncdf(d_1)\;-\;D\,e^{-rT}\,\Ncdf(d_2),\qquad
+d_1=\frac{\ln(V/D)+\big(r+\tfrac12\sigma_V^2\big)T}{\sigma_V\sqrt T},\quad d_2=d_1-\sigma_V\sqrt T .
+\label{eq:equity}
+\end{equation}
+Here $V,D,T,r$ are as in the symbol table and $\sigma_V$ is asset volatility. Debt is whatever assets are not equity: $B=V-E=V\,\Ncdf(-d_1)+D\,e^{-rT}\Ncdf(d_2)$. The market's implied yield on this debt is $y=-\tfrac1T\ln(B/D)$, and the \emph{credit spread} (the extra yield over the risk-free rate) is
+\begin{equation}
+y-r \;=\; -\frac1T\ln\!\Big[\Ncdf(d_2)+\frac{V}{De^{-rT}}\Ncdf(-d_1)\Big].
+\end{equation}
+
+\paragraph{Worked example.} A firm has $V=120$, $D=100$, $T=1$, $\sigma_V=25\%$, $r=6\%$. Then $d_2=0.844$, $d_1=1.094$, $\Ncdf(d_1)=0.863$, $\Ncdf(d_2)=0.801$, so
+\[
+E=120(0.863)-100e^{-0.06}(0.801)=103.57-75.41=28.16,
+\]
+debt is worth $B=120-28.16=91.84$, the implied yield is $8.51\%$ and the credit spread is $2.51\%$. Leverage magnifies volatility: asset volatility of 25\% becomes equity volatility of $\Ncdf(d_1)\sigma_VV/E=92\%$.
+
+\subsection{The distance-to-default formula}
+\label{sec:dd}
+The risk-neutral world prices debt. To describe the chance of default in the \emph{real} world, we return to real-world drift $\mu$. Default at $T$ means $V_T<D$, i.e.\ $\ln V_T<\ln D$. Since $\ln V_T$ is normal with the mean and standard deviation found above,
+\[
+\Pr(V_T<D)=\Ncdf\!\left(\frac{\ln D-\ln V_0-(\mu-\tfrac12\sigma^2)T}{\sigma\sqrt T}\right)=\Ncdf(-\DD),
+\]
+where
+\begin{equation}
+\boxed{\;\DD \;=\; \frac{\ln(V/D)+\big(\mu-\tfrac12\sigma^2\big)T}{\sigma\sqrt T}\;}
+\qquad\text{and}\qquad \PD=\Ncdf(-\DD).
+\label{eq:dd}
+\end{equation}
+
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}cp{11cm}@{}}\toprule
+\textbf{Symbol} & \textbf{What it is, in plain words}\\\midrule
+$V$ & Market value of the firm's assets today. Not observed; estimated (Section~\ref{sec:estimate}).\\
+$D$ & Default point: the debt level the assets must cover. For a bank this choice is contested (Section~\ref{sec:limits}).\\
+$\ln(V/D)$ & Today's cushion, in logs: how far the assets stand above the default point in percentage terms. Zero means assets equal debt.\\
+$\mu$ & Expected asset drift: average yearly growth of $V$ (arithmetic mean, not CAGR).\\
+$\tfrac12\sigma^2$ & Volatility drag: the compounding penalty that randomness imposes.\\
+$T$ & Horizon in years.\\
+$\sigma$ & Asset volatility: yearly standard deviation of asset returns.\\
+$\sigma\sqrt T$ & The size of one standard deviation of the log-asset value over the horizon (uncertainty grows with the \emph{square root} of time).\\\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{defbox}{distance to default}
+The numerator is where we expect the log-asset value to sit above the default point at time $T$: today's cushion plus the expected drift. The denominator is the size of one standard deviation of uncertainty. So $\DD$ counts how many standard deviations separate the expected asset value from the default point. A $\DD$ of 4 means default needs a four-standard-deviation drop (rare); a $\DD$ near 0 means the expected outcome is right at the default point, so default is about a coin-flip.
+
+The analogy I use: think of $\DD$ as a car's following distance on a highway, measured not in metres but in ``how many of my own braking distances am I currently keeping.'' A following distance of 4 braking-distances is comfortable — you would need a very sudden, very hard stop from the car ahead to hit it. A following distance of 0.5 braking-distances means you are basically tailgating — almost any unexpected stop ends in a collision. $\DD$ is the same idea applied to a company's balance sheet: it is not a distance in rupees, it is a distance measured in units of ``how much random wobble this specific firm's assets typically have.'' That is exactly why I cannot compare a $\DD$ of 2 for a volatile startup with a $\DD$ of 2 for a stable public-sector bank and call them equally safe — the units are each firm's own volatility, not a common ruler.
+\end{defbox}
+
+\paragraph{Worked example (continued).} With $V=120$, $D=100$, $\mu=8\%$, $\sigma=25\%$, $T=1$:
+\[
+\DD=\frac{\ln1.2+(0.08-0.03125)}{0.25}=\frac{0.1823+0.0488}{0.25}=0.924,\qquad \PD=\Ncdf(-0.924)=17.8\%.
+\]
+Section~\ref{sec:mc} confirms this by simulation.
+
+\subsection{Physical PD versus risk-neutral PD}
+\label{sec:physical-rn}
+Two default probabilities come out of the same model, and they differ.
+\begin{align}
+\PD_{\text{physical}}&=\Ncdf(-\DD),\quad \DD\text{ uses the real-world drift }\mu,\\
+\PD_{\text{risk-neutral}}&=\Ncdf(-d_2),\quad d_2=\frac{\ln(V/D)+\big(r-\tfrac12\sigma^2\big)T}{\sigma\sqrt T}\ \ (\text{same as }\DD\text{ with }\mu\to r).
+\end{align}
+The only difference is the drift: real assets are expected to grow at $\mu$, but in the risk-neutral world they grow at $r$. Investors demand a premium ($\mu>r$) for holding risky assets, so real-world growth is higher and real-world default is less likely: $\PD_{\text{physical}}<\PD_{\text{risk-neutral}}$. In the worked example, $d_2=0.844$ and the risk-neutral PD is 19.9\% against the physical 17.8\%. Use the risk-neutral PD for \emph{pricing} bonds and credit derivatives; use the physical PD to estimate how likely default \emph{actually is}.
+
+\subsection{Estimating $V$ and $\sigma_V$ in practice}
+\label{sec:estimate}
+Asset value $V$ and asset volatility $\sigma_V$ are not quoted anywhere: assets (loans, securities, buildings) do not trade as a single price. What we can observe is equity value $E$ (share price times shares outstanding) and equity volatility $\sigma_E$ (the standard deviation of daily log-returns, scaled by $\sqrt{252}$ to a yearly figure). The model links the two sets of quantities by two equations.
+
+\begin{keybox}{Two equations, two unknowns}
+\begin{align}
+E &= V\,\Ncdf(d_1)-D\,e^{-rT}\,\Ncdf(d_2) &&\text{(equity is a call on assets)}\label{eq:e1}\\
+\sigma_E\,E &= \Ncdf(d_1)\,\sigma_V\,V &&\text{(equity volatility is asset volatility, scaled by leverage)}\label{eq:e2}
+\end{align}
+Given observed $E$, $\sigma_E$ and the balance-sheet input $D$, solve numerically for $V$ and $\sigma_V$.
+\end{keybox}
+Equation~\eqref{eq:e2} follows because a small change in $V$ changes $E$ by $\Ncdf(d_1)$ times as much (the delta), so the percentage volatility of $E$ equals the volatility of $V$ scaled by $\Ncdf(d_1)V/E$. Solving is a root-finding problem: pick a trial $\sigma_V$, solve~\eqref{eq:e1} for $V$, check whether~\eqref{eq:e2} holds, and adjust $\sigma_V$ until it does. Our code does this with two nested root finders. In the worked example, feeding in $E=28.16$ and $\sigma_E=92\%$ returns $V=120$ and $\sigma_V=25\%$.
+
+\begin{warnbox}{The model does not predict default ``exactly''}
+Asset value and asset volatility are estimated, not observed. $E$ and $\sigma_E$ carry market noise; $D$ is a modelling choice; $r$ and $\mu$ are assumptions; and the normal-distribution shape is itself an assumption. Every $\DD$ in this note is an estimate with error around it. It is a risk gauge, not a forecast of a date.
+\end{warnbox}
+
+\subsection{KMV's practical refinement}
+Moody's KMV (the commercial descendant of Merton's model, built by Kealhofer, McQuown and Vasicek) \cite{crosbie2003} made two changes for practice.
+\begin{enumerate}
+\item \textbf{The default-point convention.} Real firms do not default the moment assets dip below total liabilities; they often keep operating while long-dated debt is not yet due. KMV set the default point at \emph{short-term debt plus one half of long-term debt} for a one-year horizon. This is an empirical convention, not a theorem.
+\item \textbf{DD $\to$ EDF.} The normal distribution understates how often firms actually default (real asset returns have fat tails and jumps). KMV therefore does not use $\Ncdf(-\DD)$. It ranks firms by $\DD$ and records, from its history of real defaults, what fraction of firms with a given $\DD$ defaulted within a year. That observed fraction is the \emph{expected default frequency} (EDF). $\DD$ is the ranking; EDF is the calibrated probability.
+\end{enumerate}
+
+\begin{keybox}{FRM link}
+Structural models (Merton, KMV) appear in FRM credit-risk study as the bridge from balance-sheet leverage to default probability; the equity-as-call insight and the DD to EDF mapping are the parts most likely to be examined conceptually. See Hull and Malz \cite{hull,malz2011}.
+\end{keybox}
